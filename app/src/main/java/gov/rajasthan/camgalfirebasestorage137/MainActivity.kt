@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.BitmapCompat
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 import gov.rajasthan.camgalfirebasestorage137.databinding.ActivityMainBinding
 import java.io.ByteArrayOutputStream
@@ -39,18 +40,8 @@ class MainActivity : AppCompatActivity() {
                     imgBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
                     val imgBytes = baos.toByteArray()
 
-                    val storageRef = Firebase.storage
-                    val timeStamp = Calendar.getInstance().timeInMillis
-                    val imgRef =
-                        storageRef.reference.child("app_images/profile_pic/IMG_$timeStamp.png")
+                    updateProfilePic(imgBytes)
 
-                    imgRef.putBytes(imgBytes)
-                        .addOnSuccessListener {
-                            Log.d("Success", "${it.metadata}")
-                        }.addOnFailureListener {
-                            Log.d("Failure", "${it.message}")
-                            it.printStackTrace()
-                        }
 
                 }
             }
@@ -69,19 +60,7 @@ class MainActivity : AppCompatActivity() {
                     imgBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
                     val imgBytes = baos.toByteArray()
 
-                    val storageRef = Firebase.storage
-                    val timeStamp = Calendar.getInstance().timeInMillis
-                    val imgRef =
-                        storageRef.reference.child("app_images/profile_pic/IMG_$timeStamp.png")
-
-                    imgRef.putBytes(imgBytes)
-                        .addOnSuccessListener {
-                            Log.d("Success", "${it.metadata}")
-                        }.addOnFailureListener {
-                            Log.d("Failure", "${it.message}")
-                            it.printStackTrace()
-                        }
-
+                    updateProfilePic(imgBytes)
 
                 }
             }
@@ -95,6 +74,61 @@ class MainActivity : AppCompatActivity() {
         }
 
 
+    }
+
+    fun updateProfilePic(imgBytes : ByteArray){
+        val storageRef = Firebase.storage
+        val timeStamp = Calendar.getInstance().timeInMillis
+        val imgRef =
+            storageRef.reference.child("app_images/profile_pic/IMG_$timeStamp.png")
+
+
+        imgRef.putBytes(imgBytes)
+            .addOnSuccessListener {
+                Log.d("Success", "${it.metadata}")
+
+                imgRef.downloadUrl.addOnSuccessListener {
+                    Log.d("ImgUrl", "$it")
+                    var firestore = Firebase.firestore
+                    /* firestore
+                         .collection("Users")
+                         .document("bvhsbvhsbvksjdbvjsdb") //logged in user UID
+                         .update("profile_pic", it.toString())*/
+
+                    firestore
+                        .collection("Users")
+                        .document("bvhsbvhsbvksjdbvjsdb")
+                        .collection("profile_pictures")
+                        .add(mapOf(
+                            "imgPath" to "$it"
+                        ))
+
+                    firestore
+                        .collection("Users")
+                        .document("bvhsbvhsbvksjdbvjsdb") //logged in user UID
+                        .set(mapOf(
+                            "name" to "Raman",
+                            "email" to "svnbvbsdv@gmail.com",
+                            "profile_pic" to "$it"
+                        ))
+
+                   /* firestore
+                        .collection("Users")
+                        .document("bvhsbvhsbvksjdbvjsdb")
+                        .collection("profile_pictures")
+                        .document("exbPFSNazdz7iTDUO2hg")
+                        .delete()*/
+
+
+                }.addOnFailureListener {
+
+                }
+
+
+            }.addOnFailureListener {
+                Log.d("Failure", "${it.message}")
+                it.printStackTrace()
+            }
     }
 
 
